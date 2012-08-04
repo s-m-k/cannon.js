@@ -42,7 +42,7 @@ CANNON.Ray = function(origin, direction){
      * @return Array An array of results. The result objects has properties: distance (float), point (CANNON.Vec3) and body (CANNON.RigidBody).
      */
     this.intersectBody = function ( body ) {
-	if(body.shape instanceof CANNON.ConvexPolyhedron){
+    if(body.shape instanceof CANNON.ConvexPolyhedron){
 	    return this.intersectShape(body.shape,
 				       body.quaternion,
 				       body.position,
@@ -52,8 +52,51 @@ CANNON.Ray = function(origin, direction){
 				       body.quaternion,
 				       body.position,
 				       body);
-	} else
-	    console.warn("Ray intersection is this far only implemented for ConvexPolyhedron and Box shapes.");
+	} else if(body.shape instanceof CANNON.Sphere) {
+        return this.intersectSphere(body.shape,
+				       body.position,
+				       body);
+    } else
+	    console.warn("Ray intersection is this far only implemented for ConvexPolyhedron, Sphere and Box shapes.");
+    };
+     
+     /**
+     * @fn intersectSphere
+     * @memberof CANNON.Ray
+     * @param CANNON.Shape sphere
+     * @param CANNON.Vec3 position
+     * @param CANNON.RigidBody body
+     * @return Array See intersectBody()
+     */
+    this.intersectSphere = function(shape,position,body){
+        var intersects = [];
+        
+        var insidePoint = new CANNON.Vec3();
+        var distance = distanceFromIntersection( this.origin, this.direction, position, insidePoint);
+        
+        if ( distance > shape.radius ) {
+            return intersects;
+        }
+        var intersectDistance = this.origin.distanceTo(insidePoint);
+        
+        var distPart = Math.sqrt(shape.radius * shape.radius
+                                 - distance * distance);
+        // get 2 intersection points: intersectDistance + distPart and intersectDistance - distPart
+        for(var i = 2; i--; ) {
+            var realDistance = intersectDistance + distPart;
+            distPart *= -1;
+            
+            var intersectPoint = this.origin.vadd(this.direction.mult(realDistance));
+            var intersect = {
+                distance: realDistance,
+                point: intersectPoint.copy(),
+                body: body
+            };
+            
+            intersects.push(intersect);
+        }
+        
+        return intersects;
     };
     
     /**
@@ -184,22 +227,24 @@ CANNON.Ray = function(origin, direction){
 
     };
 
-    var v0 = new CANNON.Vec3(), intersect = new CANNON.Vec3();
+    var v0 = new CANNON.Vec3();
     var dot, distance;
 
-    function distanceFromIntersection( origin, direction, position ) {
+    function distanceFromIntersection( origin, direction, position, intersect ) {
+        // if we want to get this point, we have to define it outside this func.
+        intersect = intersect || new CANNON.Vec3()
+        
+        // v0 is vector from origin to position
+        position.vsub(origin,v0);
+        dot = v0.dot( direction );
 
-	// v0 is vector from origin to position
-	position.vsub(origin,v0);
-	dot = v0.dot( direction );
+        // intersect = direction*dot + origin
+        direction.mult(dot,intersect);
+        intersect.vadd(origin,intersect);
+        
+        distance = position.distanceTo( intersect );
 
-	// intersect = direction*dot + origin
-	direction.mult(dot,intersect);
-	intersect.vadd(origin,intersect);
-	
-	distance = position.distanceTo( intersect );
-
-	return distance;
+        return distance;
 
     }
 
