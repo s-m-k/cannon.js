@@ -71,29 +71,31 @@ CANNON.Ray = function(origin, direction){
     this.intersectSphere = function(shape,position,body){
         var intersects = [];
         
-        var insidePoint = new CANNON.Vec3();
-        var distance = distanceFromIntersection( this.origin, this.direction, position, insidePoint);
-        
-        if ( distance > shape.radius ) {
-            return intersects;
-        }
-        var intersectDistance = this.origin.distanceTo(insidePoint);
-        
-        var distPart = Math.sqrt(shape.radius * shape.radius
-                                 - distance * distance);
-        // get 2 intersection points: intersectDistance + distPart and intersectDistance - distPart
-        for(var i = 2; i--; ) {
-            var realDistance = intersectDistance + distPart;
-            distPart *= -1;
+        if ( shape instanceof CANNON.Sphere ) {
+            var insidePoint = new CANNON.Vec3();
+            var distance = distanceFromIntersection( this.origin, this.direction, position, insidePoint);
             
-            var intersectPoint = this.origin.vadd(this.direction.mult(realDistance));
-            var intersect = {
-                distance: realDistance,
-                point: intersectPoint.copy(),
-                body: body
-            };
+            if ( distance > shape.radius ) {
+                return intersects;
+            }
+            var intersectDistance = this.origin.distanceTo(insidePoint);
             
-            intersects.push(intersect);
+            var distPart = Math.sqrt(shape.radius * shape.radius
+                                     - distance * distance);
+            // get 2 intersection points: intersectDistance + distPart and intersectDistance - distPart
+            for(var i = 2; i--; ) {
+                var realDistance = intersectDistance + distPart;
+                distPart *= -1;
+                
+                var intersectPoint = this.origin.vadd(this.direction.mult(realDistance));
+                var intersect = {
+                    distance: realDistance,
+                    point: intersectPoint.copy(),
+                    body: body
+                };
+                
+                intersects.push(intersect);
+            }
         }
         
         return intersects;
