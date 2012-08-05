@@ -78,23 +78,30 @@ CANNON.Ray = function(origin, direction){
             if ( distance > shape.radius ) {
                 return intersects;
             }
+            // TODO: perhaps it could be optimized a little bit
             var intersectDistance = this.origin.distanceTo(insidePoint);
+            var dot = insidePoint.vsub(this.origin).dot(this.direction);
             
-            var distPart = Math.sqrt(shape.radius * shape.radius
-                                     - distance * distance);
-            // get 2 intersection points: intersectDistance + distPart and intersectDistance - distPart
-            for(var i = 2; i--; ) {
-                var realDistance = intersectDistance + distPart;
-                distPart *= -1;
+            // check if sphere is in front of us
+            // TODO: check if starting point is inside sphere behind us
+            if(dot > 0) {
                 
-                var intersectPoint = this.origin.vadd(this.direction.mult(realDistance));
-                var intersect = {
-                    distance: realDistance,
-                    point: intersectPoint.copy(),
-                    body: body
-                };
-                
-                intersects.push(intersect);
+                var distPart = Math.sqrt(shape.radius * shape.radius
+                                         - distance * distance);
+                // get 2 intersection points: intersectDistance + distPart and intersectDistance - distPart
+                for(var i = 2; i--; ) {
+                    var realDistance = intersectDistance + distPart;
+                    distPart *= -1;
+                    
+                    var intersectPoint = this.origin.vadd(this.direction.mult(realDistance));
+                    var intersect = {
+                        distance: realDistance,
+                        point: intersectPoint.copy(),
+                        body: body
+                    };
+                    
+                    intersects.push(intersect);
+                }
             }
         }
         
